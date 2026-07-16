@@ -340,6 +340,10 @@ document.body.addEventListener('click', function once() {
 }, { once: true });
 
 if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function () {});
+}
+
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 </script>
