@@ -4,7 +4,7 @@
   "start_url": "./kiosk.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-secondary",
+  "orientation": "portrait-primary",
   "background_color": "#F0F5E8",
   "theme_color": "#13331C",
   "icons": [
