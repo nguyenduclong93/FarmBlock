@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Chấm công</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #13331C;
+    --panel: #1A4023;
+    --panel-light: #204D2B;
+    --text: #F0F5E8;
+    --text-dim: #8FAE93;
+    --gold: #86C046;
+    --teal: #316879;
+    --red: #C0392B;
+    --border: #234D2B;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: 'Baloo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { height: 100vh; display: flex; flex-direction: column; }
+
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 2.2vh 3vw 1.8vh 3vw; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  header .brand { display: flex; align-items: center; gap: 1.2vw; }
+  header .brand-name { font-size: 2.6vh; font-weight: 800; letter-spacing: 0.02em; color: var(--gold); text-transform: uppercase; }
+  header .clock { font-size: 3.6vh; font-weight: 600; font-variant-numeric: tabular-nums; }
+  header .date { font-size: 1.8vh; color: var(--text-dim); text-align: right; }
+
+  .screen { flex: 1; display: none; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* ===== MÀN HÌNH CHÍNH: camera + chọn tên + chọn loại + nút Check ===== */
+  #screen-main { flex-direction: row; padding: 2.5vh 3vw; gap: 2.5vw; }
+
+  .cam-panel { flex: 1.15; display: flex; flex-direction: column; min-width: 0; }
+  .cam-frame {
+    position: relative; flex: 1; border-radius: 20px; overflow: hidden;
+    background: #000; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  #video { width: 100%; height: 100%; object-fit: cover; }
+  .cam-error {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; padding: 4vh; color: var(--text-dim); font-size: 2vh;
+  }
+
+  .control-panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .panel-label { font-size: 1.9vh; color: var(--text-dim); margin-bottom: 1.2vh; }
+
+  #name-list {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1vh;
+    padding-right: 4px; margin-bottom: 2vh;
+  }
+  .name-item {
+    background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px;
+    padding: 1.8vh 1.4vw; font-size: 2.4vh; font-weight: 600; cursor: pointer;
+    transition: all .12s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .name-item.selected { border-color: var(--gold); background: var(--panel-light); box-shadow: 0 2px 10px rgba(134,192,70,0.2); }
+  .load-msg { color: var(--text-dim); font-size: 2vh; padding: 1vh; }
+
+  .type-row { display: flex; gap: 1.4vw; margin-bottom: 2vh; }
+  .type-btn {
+    flex: 1; padding: 2.4vh 0; text-align: center; border-radius: 14px;
+    border: 1.5px solid var(--border); background: var(--panel); font-size: 2.4vh; font-weight: 700;
+    cursor: pointer; transition: all .12s ease; color: var(--text-dim); box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .type-btn.selected.in { border-color: var(--gold); background: rgba(134,192,70,0.15); color: var(--gold); }
+  .type-btn.selected.out { border-color: var(--teal); background: rgba(49,104,121,0.2); color: var(--teal); }
+
+  #btn-check {
+    border: none; border-radius: 16px; padding: 2.8vh 0; font-size: 3vh; font-weight: 800;
+    background: var(--border); color: var(--text-dim); cursor: not-allowed; transition: all .15s ease;
+  }
+  #btn-check.ready { background: var(--gold); color: var(--bg); cursor: pointer; box-shadow: 0 4px 14px rgba(134,192,70,0.35); }
+  #hint-check { text-align: center; font-size: 1.7vh; color: var(--text-dim); margin-top: 1vh; min-height: 2.4vh; }
+
+  /* ===== MÀN HÌNH XÁC NHẬN ===== */
+  #screen-confirm { flex-direction: column; align-items: center; justify-content: center; padding: 3vh; position: relative; }
+  .cancel-link { position: absolute; top: 3vh; left: 4vw; font-size: 2.1vh; color: var(--text-dim); cursor: pointer; }
+  #confirm-photo {
+    width: min(38vh, 55vw); height: min(38vh, 55vw); border-radius: 20px; object-fit: cover;
+    border: 3px solid var(--border); margin-bottom: 2.4vh;
+  }
+  #confirm-info { font-size: 2.8vh; font-weight: 700; margin-bottom: .6vh; }
+  #confirm-sub { font-size: 2vh; color: var(--text-dim); margin-bottom: 3vh; }
+  .confirm-actions { display: flex; gap: 2vw; }
+  .btn { border: none; border-radius: 16px; font-size: 2.4vh; font-weight: 700; padding: 2.2vh 3.4vw; cursor: pointer; }
+  .btn.primary { background: var(--gold); color: var(--bg); }
+  .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-weight: 500; font-size: 2vh; }
+
+  /* ===== MÀN HÌNH KẾT QUẢ ===== */
+  #screen-result { flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  #result-icon { font-size: 13vh; margin-bottom: 2vh; }
+  #result-name { font-size: 3.2vh; font-weight: 700; }
+  #result-status { font-size: 2.8vh; margin-top: 1vh; }
+  #result-status.warn { color: var(--red); }
+  #result-status.ok { color: var(--teal); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <div class="brand-name">FarmBlock</div>
+    </div>
+    <div style="text-align:right">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="date" id="date-label">--</div>
+    </div>
+  </header>
+
+  <!-- MÀN HÌNH CHÍNH -->
+  <div class="screen active" id="screen-main">
+    <div class="cam-panel">
+      <div class="cam-frame">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="cam-error" id="cam-error">Không mở được camera.<br>Kiểm tra quyền camera của trình duyệt.</div>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="panel-label">Chọn tên</div>
+      <div id="name-list"><div class="load-msg">Đang tải danh sách nhân sự…</div></div>
+
+      <div class="panel-label">Chọn loại</div>
+      <div class="type-row">
+        <div class="type-btn in" id="btn-checkin" onclick="chonLoai('Check In')">CHECK IN</div>
+        <div class="type-btn out" id="btn-checkout" onclick="chonLoai('Check Out')">CHECK OUT</div>
+      </div>
+
+      <button id="btn-check" onclick="thucHienCheck()" disabled>CHECK</button>
+      <div id="hint-check">Chọn tên và loại chấm công để tiếp tục</div>
+    </div>
+  </div>
+
+  <!-- MÀN HÌNH XÁC NHẬN -->
+  <div class="screen" id="screen-confirm">
+    <div class="cancel-link" onclick="huyVeMain()">✕ Huỷ</div>
+    <img id="confirm-photo" alt="ảnh vừa chụp">
+    <div id="confirm-info"></div>
+    <div id="confirm-sub"></div>
+    <div class="confirm-actions">
+      <button class="btn secondary" onclick="chupLai()">Chụp lại</button>
+      <button class="btn primary" onclick="xacNhanGui()">XÁC NHẬN</button>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen">
+    <div id="result-icon">✅</div>
+    <div id="result-name"></div>
+    <div id="result-status"></div>
+  </div>
+</div>
+
+<script>
+/* ====== CẤU HÌNH — sửa dòng dưới sau khi deploy Apps Script ====== */
+const CONFIG = {
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4ZkVoqwWiTelsiOX6L2-zvs3JwGe4QpMeo0FcBTX4sgkOIR8Fdg5cTHn9qajNtNzb/exec"
+};
+/* =================================================================== */
+
+let danhSachTen = [];
+let tenDangChon = null;
+let loaiDangChon = null;
+let stream = null;
+let anhVuaChup = null; // base64 (không kèm prefix)
+
+// Đồng hồ
+function capNhatDongHo() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+  document.getElementById('date-label').textContent = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+setInterval(capNhatDongHo, 1000);
+capNhatDongHo();
+
+// ===== Camera: mở ngay khi vào màn chính, chạy liên tục =====
+async function moCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    document.getElementById('video').srcObject = stream;
+    document.getElementById('cam-error').style.display = 'none';
+  } catch (err) {
+    document.getElementById('cam-error').style.display = 'flex';
+  }
+}
+function dungCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+moCamera();
+
+// ===== Tải danh sách nhân sự (tự động thử lại nếu lỗi, không cần bấm tay) =====
+async function taiDanhSach() {
+  const list = document.getElementById('name-list');
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL);
+    const data = await res.json();
+    danhSachTen = data.names || [];
+    renderDanhSach(danhSachTen);
+  } catch (err) {
+    list.innerHTML = '<div class="load-msg">Không tải được danh sách (mất mạng hoặc lỗi kết nối).<br>Đang tự động thử lại…</div>';
+    setTimeout(taiDanhSach, 5000);
+  }
+}
+function renderDanhSach(names) {
+  const list = document.getElementById('name-list');
+  list.innerHTML = '';
+  if (names.length === 0) {
+    list.innerHTML = '<div class="load-msg">Chưa có nhân sự trong Danh sách.</div>';
+    return;
+  }
+  names.forEach(ten => {
+    const item = document.createElement('div');
+    item.className = 'name-item' + (ten === tenDangChon ? ' selected' : '');
+    item.textContent = ten;
+    item.onclick = () => chonTen(ten);
+    list.appendChild(item);
+  });
+}
+taiDanhSach();
+
+// ===== Chọn tên / chọn loại =====
+function chonTen(ten) {
+  tenDangChon = ten;
+  renderDanhSach(danhSachTen);
+  capNhatNutCheck();
+}
+function chonLoai(loai) {
+  loaiDangChon = loai;
+  document.getElementById('btn-checkin').classList.toggle('selected', loai === 'Check In');
+  document.getElementById('btn-checkout').classList.toggle('selected', loai === 'Check Out');
+  capNhatNutCheck();
+}
+function capNhatNutCheck() {
+  const btn = document.getElementById('btn-check');
+  const san_sang = tenDangChon && loaiDangChon;
+  btn.disabled = !san_sang;
+  btn.classList.toggle('ready', san_sang);
+  document.getElementById('hint-check').textContent = san_sang ? '' : 'Chọn tên và loại chấm công để tiếp tục';
+}
+
+// ===== Action "Check": chụp ảnh từ camera đang chạy -> sang màn Xác nhận =====
+function thucHienCheck() {
+  if (!tenDangChon || !loaiDangChon) return;
+  const video = document.getElementById('video');
+  if (!video.videoWidth) {
+    document.getElementById('cam-error').style.display = 'flex';
+    return;
+  }
+  const size = 260;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const side = Math.min(video.videoWidth, video.videoHeight);
+  const sx = (video.videoWidth - side) / 2;
+  const sy = (video.videoHeight - side) / 2;
+  ctx.drawImage(video, sx, sy, side, side, 0, 0, size, size);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+  anhVuaChup = dataUrl.split(',')[1];
+
+  document.getElementById('confirm-photo').src = dataUrl;
+  document.getElementById('confirm-info').textContent = tenDangChon;
+  document.getElementById('confirm-sub').textContent = loaiDangChon === 'Check In' ? 'Check In' : 'Check Out';
+  chuyenManHinh('screen-confirm');
+}
+
+function chupLai() {
+  chuyenManHinh('screen-main');
+}
+
+function huyVeMain() {
+  tenDangChon = null;
+  loaiDangChon = null;
+  anhVuaChup = null;
+  document.getElementById('btn-checkin').classList.remove('selected');
+  document.getElementById('btn-checkout').classList.remove('selected');
+  renderDanhSach(danhSachTen);
+  capNhatNutCheck();
+  chuyenManHinh('screen-main');
+}
+
+function chuyenManHinh(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== Xác nhận -> gửi lên server =====
+async function xacNhanGui() {
+  chuyenManHinh('screen-result');
+  document.getElementById('result-icon').textContent = '⏳';
+  document.getElementById('result-name').textContent = tenDangChon;
+  document.getElementById('result-status').textContent = 'Đang gửi…';
+  document.getElementById('result-status').className = '';
+
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ ten: tenDangChon, loai: loaiDangChon, anh: anhVuaChup })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      const canhBao = data.trangThai !== 'Đúng giờ';
+      document.getElementById('result-icon').textContent = canhBao ? '⚠️' : '✅';
+      document.getElementById('result-status').textContent = data.trangThai;
+      document.getElementById('result-status').className = canhBao ? 'warn' : 'ok';
+    } else {
+      document.getElementById('result-icon').textContent = '❌';
+      document.getElementById('result-status').textContent = data.error || 'Lỗi không xác định';
+    }
+  } catch (err) {
+    document.getElementById('result-icon').textContent = '❌';
+    document.getElementById('result-status').textContent = 'Không gửi được, kiểm tra mạng.';
+  }
+
+  setTimeout(() => {
+    huyVeMain();
+    taiDanhSach();
+  }, 2800);
+}
+
+// Chạm 1 lần để vào fullscreen
+document.body.addEventListener('click', function once() {
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+  document.body.removeEventListener('click', once);
+}, { once: true });
+</script>
+</body>
+</html>
