@@ -28,7 +28,7 @@
     font-family: 'Baloo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  #app { height: 100vh; display: flex; flex-direction: column; }
+  #app { height: 100vh; width: 100vw; display: flex; flex-direction: column; }
 
   header {
     display: flex; justify-content: space-between; align-items: center;
@@ -167,6 +167,11 @@
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4ZkVoqwWiTelsiOX6L2-zvs3JwGe4QpMeo0FcBTX4sgkOIR8Fdg5cTHn9qajNtNzb/exec"
 };
+// Đổi thành false nếu sau này đổi sang thiết bị khác không bị lỗi cảm biến xoay ngược
+const XOAY_180_DO = false;
+if (XOAY_180_DO) {
+  document.getElementById('app').style.transform = 'rotate(180deg)';
+}
 /* =================================================================== */
 
 const MAU_AVATAR = ['#86C046', '#316879', '#8C6D3F', '#7A4F8C', '#C0392B', '#4C9A3B'];
