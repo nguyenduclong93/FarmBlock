@@ -167,11 +167,6 @@
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx4ZkVoqwWiTelsiOX6L2-zvs3JwGe4QpMeo0FcBTX4sgkOIR8Fdg5cTHn9qajNtNzb/exec"
 };
-// Đổi thành false nếu sau này đổi sang thiết bị khác không bị lỗi cảm biến xoay ngược
-const XOAY_180_DO = false;
-if (XOAY_180_DO) {
-  document.getElementById('app').style.transform = 'rotate(180deg)';
-}
 /* =================================================================== */
 
 const MAU_AVATAR = ['#86C046', '#316879', '#8C6D3F', '#7A4F8C', '#C0392B', '#4C9A3B'];
@@ -192,6 +187,16 @@ let tenDangChon = null;
 let stream = null;
 let anhVuaChup = null;
 let loaiDangChup = null;
+
+async function layIPCongKhai() {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    return data.ip;
+  } catch (err) {
+    return null;
+  }
+}
 
 function capNhatDongHo() {
   const now = new Date();
@@ -311,9 +316,10 @@ async function xacNhanGui() {
   document.getElementById('result-status').className = '';
 
   try {
+    const ip = await layIPCongKhai();
     const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ ten: tenDangChon, loai: loaiDangChup, anh: anhVuaChup })
+      body: JSON.stringify({ ten: tenDangChon, loai: loaiDangChup, anh: anhVuaChup, ip: ip })
     });
     const data = await res.json();
 
@@ -336,13 +342,6 @@ async function xacNhanGui() {
     taiDanhSach();
   }, 2800);
 }
-
-document.body.addEventListener('click', function once() {
-  if (document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  }
-  document.body.removeEventListener('click', once);
-}, { once: true });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function () {});
