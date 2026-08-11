@@ -314,7 +314,7 @@
       <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileHoaDon').click()">
         📎 Chạm để chụp hoặc chọn ảnh từ máy
       </div>
-      <input type="file" id="fileHoaDon" accept="image/*" capture="environment" style="display:none" onchange="chonAnh(event)">
+      <input type="file" id="fileHoaDon" accept="image/*" style="display:none" onchange="chonAnh(event)">
 
       <label>Note khác</label>
       <textarea id="noteChiInput" placeholder="Ghi chú thêm (nếu có)"></textarea>
@@ -333,11 +333,11 @@
   // WEBAPP_URL = URL deploy /exec của BotGop_Code.gs (Deploy > Manage deployments > Web app URL)
   // (Không còn TOKEN — anh đã quyết định bỏ kiểm tra token.)
   var CONFIG = {
-    WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbw-kEnuEMn0SGyL3Lyr9XKjSycKdtbLR4cnKy-wDd_i1jaAcdgvVfT9RsIc56R2df4R/exec'
+    WEBAPP_URL: 'DÁN_URL_DEPLOY_/exec_VÀO_ĐÂY'
   };
   // Chấm công dùng RIÊNG 1 project Apps Script khác (Code.gs bound vào File A) — 2 project khác
   // nhau, deploy ra 2 URL /exec khác nhau, không dùng chung CONFIG.WEBAPP_URL ở trên.
-  var CC_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx4ZkVoqwWiTelsiOX6L2-zvs3JwGe4QpMeo0FcBTX4sgkOIR8Fdg5cTHn9qajNtNzb/exec';
+  var CC_WEBAPP_URL = 'DÁN_URL_DEPLOY_/exec_CỦA_KIOSK_VÀO_ĐÂY';
 
   // NHAN_SU/NHOM_CHI/DU_AN không hardcode nữa — tải thật từ sheet "Danh sách" qua
   // BotGop_Code.gs (hàm taiThamSo() ở cuối file gọi ?api=thamso). Để rỗng ban đầu, có dữ liệu
