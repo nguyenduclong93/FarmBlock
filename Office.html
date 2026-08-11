@@ -328,6 +328,12 @@
 
 <div class="toast" id="toast"></div>
 
+<div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
+
+<script>
+  var APP_VERSION = 'v1';
+  document.getElementById('versionTag').textContent = APP_VERSION;
+</script>
 <script>
   // ĐIỀN GIÁ TRỊ NÀY TRƯỚC KHI DÙNG THẬT:
   // WEBAPP_URL = URL deploy /exec của BotGop_Code.gs (Deploy > Manage deployments > Web app URL)
