@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <style>
   :root {
     --bg: #F0F5E8; --card: #FFFFFF; --card-border: #D6E4CC;
@@ -64,6 +65,47 @@
     padding: 20px 16px; text-align: center; color: var(--text-dim); font-size: 14px; margin-top: 8px; }
   .note-card b { color: var(--text); }
 
+  .cc-clock { text-align: center; font-size: 13px; font-weight: 600; color: var(--text-dim);
+    font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+  .cam-frame { position: relative; background: #DCE8D5; border-radius: 18px; display: flex;
+    align-items: center; justify-content: center; width: 42vh; height: 42vh; max-width: 100%;
+    margin: 0 auto 16px; overflow: hidden; flex-shrink: 0; }
+  #cc-video { width: 100%; height: 100%; object-fit: cover; }
+  .cam-error { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; padding: 16px; color: var(--text-dim); font-size: 13px; background: #DCE8D5; }
+  #cc-name-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 14px; min-height: 60px; }
+  .name-item { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px;
+    padding: 11px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .name-item.selected { border: 1.5px solid var(--green); background: #F5FAEF; }
+  .name-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex;
+    align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+  .name-text { font-size: 14.5px; font-weight: 600; }
+  .load-msg { color: var(--text-dim); font-size: 13px; padding: 8px; }
+  .cc-action-row { display: flex; gap: 10px; flex-shrink: 0; margin-top: auto; }
+  .cc-action-btn { flex: 1; border: none; border-radius: 14px; padding: 15px 0; display: flex;
+    align-items: center; justify-content: center; gap: 8px; font-size: 14.5px; font-weight: 800;
+    cursor: pointer; opacity: .35; pointer-events: none; transition: opacity .15s ease; font-family: inherit; }
+  .cc-action-btn.ready { opacity: 1; pointer-events: auto; }
+  .cc-action-btn.in { background: var(--green-dark); color: #fff; }
+  .cc-action-btn.out { background: var(--red); color: #fff; }
+  #cc-screen-confirm, #cc-screen-result { display: none; flex: 1; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; position: relative; }
+  #cc-screen-confirm.active, #cc-screen-result.active { display: flex; }
+  #cc-screen-main { display: flex; flex-direction: column; flex: 1; }
+  #cc-screen-main.hidden { display: none; }
+  .cc-cancel-link { position: absolute; top: 0; left: 0; font-size: 13px; color: var(--text-dim); cursor: pointer; }
+  #cc-confirm-photo { width: 34vh; height: 34vh; max-width: 70%; border-radius: 18px; object-fit: cover;
+    border: 1px solid var(--card-border); margin-bottom: 16px; }
+  #cc-confirm-info { font-size: 19px; font-weight: 700; }
+  #cc-confirm-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .cc-confirm-actions { display: flex; gap: 12px; }
+  #cc-result-icon { font-size: 52px; margin-bottom: 10px; }
+  #cc-result-name { font-size: 19px; font-weight: 700; }
+  #cc-result-status { font-size: 15px; margin-top: 6px; }
+  #cc-result-status.warn { color: var(--red); }
+  #cc-result-status.ok { color: var(--green-dark); }
+
   label { display: block; font-size: 13px; font-weight: 600; color: var(--text-dim); margin: 16px 0 6px; }
   label .req { color: var(--red); }
   select, input[type=date], input[type=time], input[type=text], input[type=number], textarea {
@@ -75,13 +117,6 @@
   .row2 > div { flex: 1; }
 
   .who-label { font-size: 13px; font-weight: 600; color: var(--text-dim); margin: 4px 0 8px; }
-  .who-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-  .who-chip { flex-shrink: 0; display: flex; align-items: center; gap: 6px; background: var(--card);
-    border: 1px solid var(--card-border); border-radius: 30px; padding: 6px 12px 6px 6px; cursor: pointer; }
-  .who-chip.selected { border: 1.5px solid var(--green); background: #F5FAEF; }
-  .who-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
-  .who-name { font-size: 13px; font-weight: 600; white-space: nowrap; }
   .remember-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
 
   .seg { display: flex; gap: 8px; margin-top: 4px; }
@@ -160,12 +195,44 @@
     </div>
 
     <div class="panel" id="panel-chamcong">
-      <div class="note-card">Không đổi gì ở đây — <b>vẫn dùng đúng màn hình chấm công hiện tại</b> (chọn tên, chụp ảnh, giới hạn theo wifi công ty).</div>
+      <div id="cc-screen-main">
+        <div class="cc-clock" id="cc-clock">--:--:--</div>
+        <div class="cam-frame">
+          <video id="cc-video" autoplay playsinline muted></video>
+          <div class="cam-error" id="cc-cam-error">Không mở được camera.<br>Kiểm tra quyền camera của trình duyệt.</div>
+        </div>
+        <div id="cc-name-list"><div class="load-msg">Đang tải danh sách nhân sự…</div></div>
+        <div class="cc-action-row">
+          <button class="cc-action-btn in" id="cc-btn-checkin" onclick="ccThucHienCheck('Check In')">
+            <i class="ti ti-login-2" aria-hidden="true"></i> CHECK IN
+          </button>
+          <button class="cc-action-btn out" id="cc-btn-checkout" onclick="ccThucHienCheck('Check Out')">
+            <i class="ti ti-logout-2" aria-hidden="true"></i> CHECK OUT
+          </button>
+        </div>
+      </div>
+
+      <div id="cc-screen-confirm">
+        <div class="cc-cancel-link" onclick="ccHuyVeMain()">✕ Huỷ</div>
+        <img id="cc-confirm-photo" alt="ảnh vừa chụp">
+        <div id="cc-confirm-info"></div>
+        <div id="cc-confirm-sub"></div>
+        <div class="cc-confirm-actions">
+          <button class="btn-submit" style="margin:0;background:transparent;border:1px solid var(--card-border);color:var(--text-dim);font-weight:600;" onclick="ccChupLai()">Chụp lại</button>
+          <button class="btn-submit" style="margin:0" onclick="ccXacNhanGui()">Xác nhận</button>
+        </div>
+      </div>
+
+      <div id="cc-screen-result">
+        <div id="cc-result-icon">✅</div>
+        <div id="cc-result-name"></div>
+        <div id="cc-result-status"></div>
+      </div>
     </div>
 
     <div class="panel" id="panel-nghi">
       <div class="who-label">Bạn là ai? <span class="req">*</span></div>
-      <div class="who-row" id="who-nghi"></div>
+      <select id="who-nghi" onchange="chonNguoi(this.value)"></select>
       <div class="remember-hint" id="remember-nghi"></div>
 
       <div class="seg" style="margin-top:18px">
@@ -222,7 +289,7 @@
 
     <div class="panel" id="panel-chi">
       <div class="who-label">Bạn là ai? <span class="req">*</span></div>
-      <div class="who-row" id="who-chi"></div>
+      <select id="who-chi" onchange="chonNguoi(this.value)"></select>
       <div class="remember-hint" id="remember-chi"></div>
 
       <label class="req">Ngày chi</label>
@@ -266,9 +333,12 @@
   // WEBAPP_URL = URL deploy /exec của BotGop_Code.gs (Deploy > Manage deployments > Web app URL)
   // TOKEN      = đúng giá trị Script Property "WEBHOOK_SECRET" đã đặt cho BotGop_Code.gs
   var CONFIG = {
-    WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbw-kEnuEMn0SGyL3Lyr9XKjSycKdtbLR4cnKy-wDd_i1jaAcdgvVfT9RsIc56R2df4R/exec',
+    WEBAPP_URL: 'DÁN_URL_DEPLOY_/exec_VÀO_ĐÂY',
     TOKEN: 'DÁN_WEBHOOK_SECRET_VÀO_ĐÂY'
   };
+  // Chấm công dùng RIÊNG 1 project Apps Script khác (Code.gs bound vào File A) — 2 project khác
+  // nhau, deploy ra 2 URL /exec khác nhau, không dùng chung CONFIG.WEBAPP_URL ở trên.
+  var CC_WEBAPP_URL = 'DÁN_URL_DEPLOY_/exec_CỦA_KIOSK_VÀO_ĐÂY';
 
   var NHAN_SU = [
     'Mai Chí Hiếu', 'Trịnh Hoài Thu', 'Hoàng Trung Kiên',
@@ -282,23 +352,28 @@
   // Ở bản mockup này chỉ nhớ trong phiên xem hiện tại (biến JS thường).
   var nguoiDaChon = null;
 
-  function renderWho(containerId) {
-    var el = document.getElementById(containerId);
-    el.innerHTML = '';
-    NHAN_SU.forEach(function (ten) {
-      var chip = document.createElement('div');
-      chip.className = 'who-chip' + (ten === nguoiDaChon ? ' selected' : '');
-      chip.innerHTML = '<div class="who-avatar" style="background:' + mau(ten) + '">' + viet_tat(ten) + '</div><div class="who-name">' + ten + '</div>';
-      chip.onclick = function () { nguoiDaChon = ten; renderWho('who-nghi'); renderWho('who-chi'); capNhatGhiNho(); };
-      el.appendChild(chip);
+  function domSelect(id) { return document.getElementById(id); }
+
+  function renderWho() {
+    [['who-nghi'], ['who-chi']].forEach(function (arr) {
+      var sel = domSelect(arr[0]);
+      sel.innerHTML = '';
+      sel.appendChild(new Option('-- Chọn tên --', ''));
+      NHAN_SU.forEach(function (ten) { sel.appendChild(new Option(ten, ten)); });
+      sel.value = nguoiDaChon || '';
     });
+  }
+  function chonNguoi(ten) {
+    nguoiDaChon = ten || null;
+    renderWho();
+    capNhatGhiNho();
   }
   function capNhatGhiNho() {
     var txt = nguoiDaChon ? 'Lần sau mở app sẽ tự chọn sẵn "' + nguoiDaChon + '".' : '';
     document.getElementById('remember-nghi').textContent = txt;
     document.getElementById('remember-chi').textContent = txt;
   }
-  renderWho('who-nghi'); renderWho('who-chi');
+  renderWho();
 
   var approverSel = document.getElementById('nguoiDuyetChi');
   NHAN_SU.forEach(function (ten) { approverSel.appendChild(new Option(ten, ten)); });
@@ -316,6 +391,8 @@
     document.getElementById('pageTitle').textContent = tab === 'chamcong' ? 'Chấm công' : (tab === 'nghi' ? 'Nghỉ phép' : 'Chi tiêu');
     document.getElementById('backBtn').classList.add('show');
     document.getElementById('mainHeader').classList.add('in-feature');
+    if (tab === 'chamcong') { ccMoCamera(); ccTaiDanhSach(); }
+    else { ccDungCamera(); }
   }
   function veTrangChu() {
     document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
@@ -323,6 +400,7 @@
     document.getElementById('pageTitle').textContent = 'Xin chào';
     document.getElementById('backBtn').classList.remove('show');
     document.getElementById('mainHeader').classList.remove('in-feature');
+    ccDungCamera();
   }
 
   var loaiNghiHienTai = 'Muon';
@@ -438,6 +516,160 @@
       btn.textContent = oldText;
       btn.disabled = false;
     }
+  }
+
+  // ============================================================
+  // CHẤM CÔNG — mang nguyên logic từ kiosk.html, chỉ đổi tên hàm/id (tiền tố cc)
+  // để không đụng tới phần Nghỉ phép/Chi tiêu đang dùng chung 1 file.
+  // ============================================================
+  var ccDanhSachTen = [];
+  var ccTenDangChon = null;
+  var ccStream = null;
+  var ccAnhVuaChup = null;
+  var ccLoaiDangChup = null;
+
+  function ccCapNhatDongHo() {
+    var now = new Date();
+    var el = document.getElementById('cc-clock');
+    if (el) el.textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+  }
+  setInterval(ccCapNhatDongHo, 1000);
+  ccCapNhatDongHo();
+
+  async function layIPCongKhai() {
+    try {
+      var res = await fetch('https://api.ipify.org?format=json');
+      var data = await res.json();
+      return data.ip;
+    } catch (err) { return null; }
+  }
+
+  async function ccMoCamera() {
+    try {
+      ccStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      document.getElementById('cc-video').srcObject = ccStream;
+      document.getElementById('cc-cam-error').style.display = 'none';
+    } catch (err) {
+      document.getElementById('cc-cam-error').style.display = 'flex';
+    }
+  }
+  function ccDungCamera() {
+    if (ccStream) { ccStream.getTracks().forEach(function (t) { t.stop(); }); ccStream = null; }
+  }
+
+  async function ccTaiDanhSach() {
+    var list = document.getElementById('cc-name-list');
+    try {
+      var res = await fetch(CC_WEBAPP_URL);
+      var data = await res.json();
+      ccDanhSachTen = data.names || [];
+      ccRenderDanhSach();
+    } catch (err) {
+      list.innerHTML = '<div class="load-msg">Không tải được danh sách (mất mạng hoặc lỗi kết nối). Đang thử lại…</div>';
+      setTimeout(ccTaiDanhSach, 5000);
+    }
+  }
+  function ccRenderDanhSach() {
+    var list = document.getElementById('cc-name-list');
+    list.innerHTML = '';
+    if (ccDanhSachTen.length === 0) {
+      list.innerHTML = '<div class="load-msg">Chưa có nhân sự trong Danh sách.</div>';
+      return;
+    }
+    ccDanhSachTen.forEach(function (ten) {
+      var item = document.createElement('div');
+      item.className = 'name-item' + (ten === ccTenDangChon ? ' selected' : '');
+      var av = document.createElement('div');
+      av.className = 'name-avatar';
+      av.style.background = mau(ten);
+      av.textContent = viet_tat(ten);
+      var txt = document.createElement('div');
+      txt.className = 'name-text';
+      txt.textContent = ten;
+      item.appendChild(av);
+      item.appendChild(txt);
+      item.onclick = function () { ccChonTen(ten); };
+      list.appendChild(item);
+    });
+  }
+  function ccChonTen(ten) {
+    ccTenDangChon = ten;
+    ccRenderDanhSach();
+    ccCapNhatNutAction();
+  }
+  function ccCapNhatNutAction() {
+    var sanSang = !!ccTenDangChon;
+    document.getElementById('cc-btn-checkin').classList.toggle('ready', sanSang);
+    document.getElementById('cc-btn-checkout').classList.toggle('ready', sanSang);
+  }
+
+  function ccThucHienCheck(loai) {
+    if (!ccTenDangChon) return;
+    var video = document.getElementById('cc-video');
+    if (!video.videoWidth) {
+      document.getElementById('cc-cam-error').style.display = 'flex';
+      return;
+    }
+    ccLoaiDangChup = loai;
+    var size = 260;
+    var canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    var side = Math.min(video.videoWidth, video.videoHeight);
+    var sx = (video.videoWidth - side) / 2;
+    var sy = (video.videoHeight - side) / 2;
+    ctx.drawImage(video, sx, sy, side, side, 0, 0, size, size);
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+    ccAnhVuaChup = dataUrl.split(',')[1];
+
+    document.getElementById('cc-confirm-photo').src = dataUrl;
+    document.getElementById('cc-confirm-info').textContent = ccTenDangChon;
+    document.getElementById('cc-confirm-sub').textContent = loai;
+    ccChuyenManHinh('cc-screen-confirm');
+  }
+  function ccChupLai() { ccChuyenManHinh('cc-screen-main'); }
+  function ccHuyVeMain() {
+    ccTenDangChon = null; ccLoaiDangChup = null; ccAnhVuaChup = null;
+    ccRenderDanhSach(); ccCapNhatNutAction();
+    ccChuyenManHinh('cc-screen-main');
+  }
+  function ccChuyenManHinh(id) {
+    ['cc-screen-main', 'cc-screen-confirm', 'cc-screen-result'].forEach(function (sid) {
+      var el = document.getElementById(sid);
+      if (sid === 'cc-screen-main') el.classList.toggle('hidden', sid !== id);
+      else el.classList.toggle('active', sid === id);
+    });
+  }
+
+  async function ccXacNhanGui() {
+    ccChuyenManHinh('cc-screen-result');
+    document.getElementById('cc-result-icon').textContent = '⏳';
+    document.getElementById('cc-result-name').textContent = ccTenDangChon;
+    document.getElementById('cc-result-status').textContent = 'Đang gửi…';
+    document.getElementById('cc-result-status').className = '';
+
+    try {
+      var ip = await layIPCongKhai();
+      var res = await fetch(CC_WEBAPP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ ten: ccTenDangChon, loai: ccLoaiDangChup, anh: ccAnhVuaChup, ip: ip })
+      });
+      var data = await res.json();
+      if (data.ok) {
+        var canhBao = data.trangThai !== 'Đúng giờ';
+        document.getElementById('cc-result-icon').textContent = canhBao ? '⚠️' : '✅';
+        document.getElementById('cc-result-status').textContent = data.trangThai;
+        document.getElementById('cc-result-status').className = canhBao ? 'warn' : 'ok';
+      } else {
+        document.getElementById('cc-result-icon').textContent = '❌';
+        document.getElementById('cc-result-status').textContent = data.error || 'Lỗi không xác định';
+      }
+    } catch (err) {
+      document.getElementById('cc-result-icon').textContent = '❌';
+      document.getElementById('cc-result-status').textContent = 'Không gửi được, kiểm tra mạng.';
+    }
+
+    setTimeout(function () { ccHuyVeMain(); ccTaiDanhSach(); }, 2800);
   }
 </script>
 </body>
