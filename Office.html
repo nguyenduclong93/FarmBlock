@@ -296,10 +296,10 @@
       <input type="date" id="ngayChi">
 
       <label class="req">Nhóm chi</label>
-      <select id="nhomChiSel"><option>Văn phòng</option><option>Công ty</option></select>
+      <select id="nhomChiSel"></select>
 
       <label>Dự án (nếu có)</label>
-      <select id="duAnSel"><option>Không có</option><option>FarmBlock</option></select>
+      <select id="duAnSel"></select>
 
       <label class="req">Khoản chi</label>
       <input type="text" id="khoanChiInput" placeholder="Vd: Mua văn phòng phẩm">
@@ -329,21 +329,22 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ĐIỀN 2 GIÁ TRỊ NÀY TRƯỚC KHI DÙNG THẬT:
+  // ĐIỀN GIÁ TRỊ NÀY TRƯỚC KHI DÙNG THẬT:
   // WEBAPP_URL = URL deploy /exec của BotGop_Code.gs (Deploy > Manage deployments > Web app URL)
-  // TOKEN      = đúng giá trị Script Property "WEBHOOK_SECRET" đã đặt cho BotGop_Code.gs
+  // (Không còn TOKEN — anh đã quyết định bỏ kiểm tra token.)
   var CONFIG = {
-    WEBAPP_URL: 'DÁN_URL_DEPLOY_/exec_VÀO_ĐÂY',
-    TOKEN: 'DÁN_WEBHOOK_SECRET_VÀO_ĐÂY'
+    WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbw-kEnuEMn0SGyL3Lyr9XKjSycKdtbLR4cnKy-wDd_i1jaAcdgvVfT9RsIc56R2df4R/exec'
   };
   // Chấm công dùng RIÊNG 1 project Apps Script khác (Code.gs bound vào File A) — 2 project khác
   // nhau, deploy ra 2 URL /exec khác nhau, không dùng chung CONFIG.WEBAPP_URL ở trên.
-  var CC_WEBAPP_URL = 'DÁN_URL_DEPLOY_/exec_CỦA_KIOSK_VÀO_ĐÂY';
+  var CC_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx4ZkVoqwWiTelsiOX6L2-zvs3JwGe4QpMeo0FcBTX4sgkOIR8Fdg5cTHn9qajNtNzb/exec';
 
-  var NHAN_SU = [
-    'Mai Chí Hiếu', 'Trịnh Hoài Thu', 'Hoàng Trung Kiên',
-    'Nguyễn Hoàng Diệu Anh', 'Kitty', 'Nguyễn Đức Long', 'Lê Hữu Ninh'
-  ];
+  // NHAN_SU/NHOM_CHI/DU_AN không hardcode nữa — tải thật từ sheet "Danh sách" qua
+  // BotGop_Code.gs (hàm taiThamSo() ở cuối file gọi ?api=thamso). Để rỗng ban đầu, có dữ liệu
+  // thật thì render lại — không đụng gì tới cấu trúc 2 bảng tham số trong Google Sheet.
+  var NHAN_SU = [];
+  var NHOM_CHI = [];
+  var DU_AN = [];
   var MAU = ['#4C9A3B', '#86C046', '#2E7D6B', '#5A7A5E', '#7A9A46', '#3B6D8C', '#8C5A3B'];
   function mau(ten) { var h = 0; for (var i=0;i<ten.length;i++) h=(h*31+ten.charCodeAt(i))%MAU.length; return MAU[Math.abs(h)%MAU.length]; }
   function viet_tat(ten) { var p = ten.trim().split(/\s+/); var last = p[p.length-1]||''; var first = p.length>1?p[0]:''; return ((first[0]||'')+(last[0]||'')).toUpperCase(); }
@@ -358,7 +359,7 @@
     [['who-nghi'], ['who-chi']].forEach(function (arr) {
       var sel = domSelect(arr[0]);
       sel.innerHTML = '';
-      sel.appendChild(new Option('-- Chọn tên --', ''));
+      sel.appendChild(new Option(NHAN_SU.length ? '-- Chọn tên --' : 'Đang tải danh sách…', ''));
       NHAN_SU.forEach(function (ten) { sel.appendChild(new Option(ten, ten)); });
       sel.value = nguoiDaChon || '';
     });
@@ -373,10 +374,38 @@
     document.getElementById('remember-nghi').textContent = txt;
     document.getElementById('remember-chi').textContent = txt;
   }
+  function renderThamSoChiTieu() {
+    var catSel = document.getElementById('nhomChiSel');
+    var projSel = document.getElementById('duAnSel');
+    catSel.innerHTML = '';
+    NHOM_CHI.forEach(function (c) { catSel.appendChild(new Option(c, c)); });
+    projSel.innerHTML = '';
+    projSel.appendChild(new Option('Không có', 'Không có'));
+    DU_AN.forEach(function (p) { projSel.appendChild(new Option(p, p)); });
+    var approverSel = document.getElementById('nguoiDuyetChi');
+    approverSel.innerHTML = '';
+    NHAN_SU.forEach(function (ten) { approverSel.appendChild(new Option(ten, ten)); });
+  }
   renderWho();
+  renderThamSoChiTieu();
 
-  var approverSel = document.getElementById('nguoiDuyetChi');
-  NHAN_SU.forEach(function (ten) { approverSel.appendChild(new Option(ten, ten)); });
+  // Gọi 1 lần khi mở app — lấy đúng dữ liệu thật từ sheet "Danh sách" (không hardcode).
+  async function taiThamSo() {
+    try {
+      var url = CONFIG.WEBAPP_URL + '?api=thamso';
+      var res = await fetch(url);
+      var data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Lỗi tải tham số');
+      NHAN_SU = data.names || [];
+      NHOM_CHI = data.categories || [];
+      DU_AN = data.projects || [];
+    } catch (err) {
+      NHAN_SU = []; NHOM_CHI = []; DU_AN = [];
+    }
+    renderWho();
+    renderThamSoChiTieu();
+  }
+  taiThamSo();
 
   var thuVN = ['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
   (function capNhatLoiChao() {
@@ -452,7 +481,7 @@
     anLoi(loai);
     if (!nguoiDaChon) { baoLoi(loai, 'Vui lòng chọn tên trước khi gửi.'); return; }
 
-    var payload = { token: CONFIG.TOKEN, loaiYeuCau: loai, nguoiGui: nguoiDaChon };
+    var payload = { loaiYeuCau: loai, nguoiGui: nguoiDaChon };
 
     if (loai === 'nghi') {
       payload.loaiDon = loaiNghiHienTai;
