@@ -339,11 +339,11 @@
   // WEBAPP_URL = URL deploy /exec của BotGop_Code.gs (Deploy > Manage deployments > Web app URL)
   // (Không còn TOKEN — anh đã quyết định bỏ kiểm tra token.)
   var CONFIG = {
-    WEBAPP_URL: 'DÁN_URL_DEPLOY_/exec_VÀO_ĐÂY'
+    WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbw-kEnuEMn0SGyL3Lyr9XKjSycKdtbLR4cnKy-wDd_i1jaAcdgvVfT9RsIc56R2df4R/exec'
   };
   // Chấm công dùng RIÊNG 1 project Apps Script khác (Code.gs bound vào File A) — 2 project khác
   // nhau, deploy ra 2 URL /exec khác nhau, không dùng chung CONFIG.WEBAPP_URL ở trên.
-  var CC_WEBAPP_URL = 'DÁN_URL_DEPLOY_/exec_CỦA_KIOSK_VÀO_ĐÂY';
+  var CC_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx4ZkVoqwWiTelsiOX6L2-zvs3JwGe4QpMeo0FcBTX4sgkOIR8Fdg5cTHn9qajNtNzb/exec';
 
   // NHAN_SU/NHOM_CHI/DU_AN không hardcode nữa — tải thật từ sheet "Danh sách" qua
   // BotGop_Code.gs (hàm taiThamSo() ở cuối file gọi ?api=thamso). Để rỗng ban đầu, có dữ liệu
