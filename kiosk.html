@@ -128,9 +128,13 @@
 
   .upload-box { border: 1.5px dashed var(--card-border); border-radius: 12px; padding: 16px;
     text-align: center; color: var(--text-dim); font-size: 13px; cursor: pointer; background: var(--card); }
-  .upload-box.has-img { padding: 8px; }
-  .upload-box img { max-width: 100%; max-height: 160px; border-radius: 8px; display: block; margin: 0 auto; }
-  .upload-remove { margin-top: 8px; font-size: 12px; color: var(--red); font-weight: 700; cursor: pointer; }
+  .anh-preview-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .anh-thumb { position: relative; width: 66px; height: 66px; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--card-border); flex-shrink: 0; }
+  .anh-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .anh-thumb .x { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center; cursor: pointer; }
 
   .btn-submit { width: 100%; padding: 14px; margin-top: 22px; border: none; border-radius: 12px;
     background: var(--green-dark); color: #fff; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; }
@@ -238,6 +242,7 @@
       <div class="seg" style="margin-top:18px">
         <button type="button" id="segMuon" class="active" onclick="chonLoaiNghi('Muon')">Đến muộn / Về sớm</button>
         <button type="button" id="segNghi" onclick="chonLoaiNghi('Nghi')">Nghỉ phép</button>
+        <button type="button" id="segOffsite" onclick="chonLoaiNghi('OffSite')">Off-site</button>
       </div>
 
       <div id="formMuon">
@@ -263,10 +268,20 @@
       </div>
 
       <div id="formNghi" class="sub-hidden">
-        <label class="req">Hình thức nghỉ</label>
+        <div id="khoiHinhThucOffsite" class="sub-hidden">
+          <label class="req">Làm việc ở đâu</label>
+          <select id="hinhThucOffsite">
+            <option value="WFH">Làm tại nhà (WFH)</option>
+            <option value="Đi sự kiện">Đi sự kiện</option>
+            <option value="Gặp khách hàng/đối tác">Gặp khách hàng / đối tác</option>
+            <option value="Công tác">Công tác</option>
+            <option value="Khác">Khác (ghi rõ ở lý do)</option>
+          </select>
+        </div>
+        <label class="req" id="nhanKieuNghi">Hình thức nghỉ</label>
         <select id="kieuNghi" onchange="chonKieuNghi()">
-          <option value="CaNgay">Nghỉ cả ngày</option>
-          <option value="TheoBuoi">Nghỉ nửa ngày</option>
+          <option value="CaNgay" id="optCaNgay">Nghỉ cả ngày</option>
+          <option value="TheoBuoi" id="optTheoBuoi">Nghỉ nửa ngày</option>
         </select>
         <div id="nghiCaNgay">
           <div class="row2">
@@ -312,9 +327,10 @@
 
       <label class="req">Ảnh hoá đơn</label>
       <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileHoaDon').click()">
-        📎 Chạm để chụp hoặc chọn ảnh từ máy
+        📎 Chạm để chụp hoặc chọn ảnh từ máy (chọn được nhiều ảnh)
       </div>
-      <input type="file" id="fileHoaDon" accept="image/*" style="display:none" onchange="chonAnh(event)">
+      <div class="anh-preview-row" id="anhPreviewRow"></div>
+      <input type="file" id="fileHoaDon" accept="image/*" multiple style="display:none" onchange="chonAnh(event)">
 
       <label>Note khác</label>
       <textarea id="noteChiInput" placeholder="Ghi chú thêm (nếu có)"></textarea>
@@ -331,7 +347,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v1';
+  var APP_VERSION = 'v3';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -443,8 +459,15 @@
     loaiNghiHienTai = loai;
     document.getElementById('segMuon').classList.toggle('active', loai === 'Muon');
     document.getElementById('segNghi').classList.toggle('active', loai === 'Nghi');
+    document.getElementById('segOffsite').classList.toggle('active', loai === 'OffSite');
     document.getElementById('formMuon').classList.toggle('sub-hidden', loai !== 'Muon');
-    document.getElementById('formNghi').classList.toggle('sub-hidden', loai !== 'Nghi');
+    // Off-site dùng chung form với Nghỉ phép (cùng các trường ngày/buổi/lý do), thêm ô "Làm việc ở đâu"
+    document.getElementById('formNghi').classList.toggle('sub-hidden', loai === 'Muon');
+    var os = loai === 'OffSite';
+    document.getElementById('khoiHinhThucOffsite').classList.toggle('sub-hidden', !os);
+    document.getElementById('nhanKieuNghi').textContent = os ? 'Thời gian' : 'Hình thức nghỉ';
+    document.getElementById('optCaNgay').textContent = os ? 'Cả ngày' : 'Nghỉ cả ngày';
+    document.getElementById('optTheoBuoi').textContent = os ? 'Nửa ngày' : 'Nghỉ nửa ngày';
   }
   function chonKieuNghi() {
     var k = document.getElementById('kieuNghi').value;
@@ -452,26 +475,32 @@
     document.getElementById('nghiTheoBuoi').classList.toggle('sub-hidden', k !== 'TheoBuoi');
   }
 
-  var anhHoaDonBase64 = '';
+  var anhHoaDonList = []; // mảng base64, cho phép đính kèm nhiều ảnh hoá đơn
   function chonAnh(e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function (ev) {
-      anhHoaDonBase64 = ev.target.result;
-      var box = document.getElementById('uploadBox');
-      box.classList.add('has-img');
-      box.innerHTML = '<img src="' + ev.target.result + '">' +
-        '<div class="upload-remove" onclick="event.stopPropagation(); boAnh()">Xoá ảnh, chọn lại</div>';
-    };
-    reader.readAsDataURL(file);
+    var files = Array.prototype.slice.call(e.target.files || []);
+    files.forEach(function (file) {
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        anhHoaDonList.push(ev.target.result);
+        renderAnhPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = ''; // reset để chọn thêm/chọn lại cùng ảnh ở lần sau vẫn kích hoạt onchange
   }
-  function boAnh() {
-    anhHoaDonBase64 = '';
-    var box = document.getElementById('uploadBox');
-    box.classList.remove('has-img');
-    box.innerHTML = '📎 Chạm để chụp hoặc chọn ảnh từ máy';
-    document.getElementById('fileHoaDon').value = '';
+  function renderAnhPreview() {
+    var row = document.getElementById('anhPreviewRow');
+    row.innerHTML = '';
+    anhHoaDonList.forEach(function (src, idx) {
+      var div = document.createElement('div');
+      div.className = 'anh-thumb';
+      div.innerHTML = '<img src="' + src + '"><div class="x" onclick="xoaAnh(' + idx + ')">✕</div>';
+      row.appendChild(div);
+    });
+  }
+  function xoaAnh(idx) {
+    anhHoaDonList.splice(idx, 1);
+    renderAnhPreview();
   }
 
   function baoLoi(panel, msg) {
@@ -501,6 +530,7 @@
       } else {
         var kieu = document.getElementById('kieuNghi').value;
         payload.kieuNghi = kieu;
+        if (loaiNghiHienTai === 'OffSite') payload.hinhThuc = document.getElementById('hinhThucOffsite').value;
         if (kieu === 'CaNgay') {
           payload.tuNgay = document.getElementById('tuNgayNghi').value;
           payload.denNgay = document.getElementById('denNgayNghi').value || payload.tuNgay;
@@ -521,7 +551,7 @@
       payload.amount = Number(document.getElementById('soTienInput').value);
       payload.approver = document.getElementById('nguoiDuyetChi').value;
       payload.note = document.getElementById('noteChiInput').value.trim();
-      payload.anhHoaDonBase64 = anhHoaDonBase64;
+      payload.anhHoaDonBase64List = anhHoaDonList;
       if (!payload.ngayChi || !payload.category || !payload.item || !payload.amount || !payload.approver) {
         return baoLoi('chi', 'Vui lòng điền đầy đủ các trường bắt buộc.');
       }
@@ -541,7 +571,8 @@
           : '✅ Đã gửi yêu cầu chi #' + out.id + ' — <b>' + nguoiDaChon + '</b>.') + (out.canhBao || '');
         toast.classList.add('show');
         setTimeout(function () { toast.classList.remove('show'); veTrangChu(); }, 3500);
-        anhHoaDonBase64 = '';
+        anhHoaDonList = [];
+        renderAnhPreview();
       } else {
         baoLoi(loai, out.error || 'Có lỗi xảy ra, thử lại.');
       }
