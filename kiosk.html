@@ -100,11 +100,37 @@
   #cc-confirm-info { font-size: 19px; font-weight: 700; }
   #cc-confirm-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
   .cc-confirm-actions { display: flex; gap: 12px; }
-  #cc-result-icon { font-size: 52px; margin-bottom: 10px; }
-  #cc-result-name { font-size: 19px; font-weight: 700; }
-  #cc-result-status { font-size: 15px; margin-top: 6px; }
+  .cc-result-card { width: 100%; background: var(--card); border: 1px solid var(--card-border); border-radius: 22px;
+    padding: 26px 18px 18px; display: flex; flex-direction: column; align-items: center; }
+  #cc-result-icon { font-size: 56px; line-height: 1; margin-bottom: 12px; }
+  #cc-result-name { font-size: 20px; font-weight: 800; }
+  #cc-result-luot { font-size: 15px; font-weight: 600; color: var(--text-dim); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  #cc-result-luot b { color: var(--text); font-size: 26px; font-weight: 800; display: block; margin-top: 4px; }
+  #cc-result-status { font-size: 16px; font-weight: 700; margin-top: 10px; }
   #cc-result-status.warn { color: var(--red); }
   #cc-result-status.ok { color: var(--green-dark); }
+  #cc-result-status.info { color: var(--text); }
+  .cc-result-note { font-size: 13.5px; line-height: 1.5; color: var(--text); background: var(--field-bg);
+    border-radius: 12px; padding: 10px 12px; margin-top: 14px; width: 100%; text-align: left; display: none; }
+  .cc-result-note.show { display: block; }
+  .cc-result-meta { font-size: 12.5px; color: var(--text-dim); margin-top: 10px; min-height: 18px; }
+  .cc-result-actions { display: flex; gap: 10px; width: 100%; margin-top: 18px; }
+  .cc-result-actions .btn-submit { margin: 0; }
+  .btn-ghost { background: transparent !important; border: 1px solid var(--card-border) !important;
+    color: var(--text) !important; font-weight: 600 !important; }
+  .net-chip { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+    border-radius: 999px; padding: 6px 12px; margin: 0 auto 10px; width: fit-content; max-width: 100%; text-align: center;
+    background: var(--field-bg); color: var(--text-dim); }
+  .net-chip.ok { background: #E3F1D6; color: var(--green-dark); }
+  .net-chip.sai { background: #F8D7DA; color: #8A1F1F; border-radius: 12px; }
+  .net-chip.mat { background: #FFF3CD; color: #6B4E00; border-radius: 12px; }
+  .net-chip a { color: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+  .home-link { text-align: center; font-size: 13px; color: var(--text-dim); padding: 6px 0 0; cursor: pointer; }
+  .home-link b { color: var(--green-dark); }
+  .pending-bar { display: none; background: #FFF3CD; color: #6B4E00; border-radius: 12px; padding: 9px 12px;
+    font-size: 12.5px; line-height: 1.4; margin-bottom: 10px; }
+  .pending-bar.show { display: block; }
+  .pending-bar a { color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 
   label { display: block; font-size: 13px; font-weight: 600; color: var(--text-dim); margin: 16px 0 6px; }
   label .req { color: var(--red); }
@@ -169,6 +195,7 @@
         <div class="greet-title">Bạn cần làm gì?</div>
       </div>
       <div class="home-actions">
+        <div class="pending-bar" id="cc-pending-home"></div>
         <div class="home-row">
           <div class="home-tile" onclick="chonTab('nghi')">
             <div class="icon-badge sm">
@@ -195,12 +222,15 @@
           </div>
           <div class="chevron"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
         </div>
+        <div class="home-link" onclick="moGopY()">💬 Gặp lỗi hoặc có góp ý? <b>Gửi góp ý</b></div>
       </div>
     </div>
 
     <div class="panel" id="panel-chamcong">
       <div id="cc-screen-main">
+        <div class="pending-bar" id="cc-pending-cc"></div>
         <div class="cc-clock" id="cc-clock">--:--:--</div>
+        <div class="net-chip" id="cc-net">⏳ Đang kiểm tra mạng…</div>
         <div class="cam-frame">
           <video id="cc-video" autoplay playsinline muted></video>
           <div class="cam-error" id="cc-cam-error">Không mở được camera.<br>Kiểm tra quyền camera của trình duyệt.</div>
@@ -228,9 +258,19 @@
       </div>
 
       <div id="cc-screen-result">
-        <div id="cc-result-icon">✅</div>
-        <div id="cc-result-name"></div>
-        <div id="cc-result-status"></div>
+        <div class="cc-result-card">
+          <div id="cc-result-icon">✅</div>
+          <div id="cc-result-name"></div>
+          <div id="cc-result-luot"></div>
+          <div id="cc-result-status"></div>
+          <div class="cc-result-note" id="cc-result-note"></div>
+          <div class="cc-result-meta" id="cc-result-meta"></div>
+        </div>
+        <div class="cc-result-actions">
+          <button class="btn-submit btn-ghost" id="cc-btn-retry" style="display:none" onclick="ccThuGuiLai()">Thử gửi lại</button>
+          <button class="btn-submit btn-ghost" id="cc-btn-baoloi" style="display:none" onclick="ccBaoLoi()">Báo lỗi</button>
+          <button class="btn-submit" id="cc-btn-ok" onclick="ccDongKetQua()">OK</button>
+        </div>
       </div>
     </div>
 
@@ -302,6 +342,28 @@
       <button class="btn-submit" id="btnNghi" onclick="guiDon('nghi', this)">Gửi đơn</button>
     </div>
 
+    <div class="panel" id="panel-gopy">
+      <div class="who-label">Bạn là ai? <span style="font-weight:400">(không bắt buộc)</span></div>
+      <select id="who-gopy" onchange="chonNguoi(this.value)"></select>
+
+      <div class="seg" style="margin-top:18px">
+        <button type="button" id="segLoi" class="active" onclick="chonLoaiGopY('Báo lỗi')">Báo lỗi</button>
+        <button type="button" id="segGopY" onclick="chonLoaiGopY('Góp ý')">Góp ý</button>
+      </div>
+
+      <label class="req">Nội dung</label>
+      <textarea id="noiDungGopY" style="min-height:110px" placeholder="Bạn gặp lỗi gì / muốn góp ý gì? Ví dụ: bấm Check in báo lỗi Wifi dù đang dùng Wifi công ty"></textarea>
+
+      <label>Ảnh chụp màn hình (không bắt buộc, tối đa 3 ảnh)</label>
+      <div class="upload-box" onclick="document.getElementById('fileGopY').click()">📎 Chạm để chọn ảnh</div>
+      <div class="anh-preview-row" id="anhGopYRow"></div>
+      <input type="file" id="fileGopY" accept="image/*" multiple style="display:none" onchange="chonAnhGopY(event)">
+
+      <div class="remember-hint" style="margin-top:10px">Kèm theo tự động: phiên bản app, loại máy, trạng thái mạng — để sửa lỗi nhanh hơn.</div>
+      <div class="form-err" id="errGopY"></div>
+      <button class="btn-submit" id="btnGopY" onclick="guiGopY(this)">Gửi góp ý</button>
+    </div>
+
     <div class="panel" id="panel-chi">
       <div class="who-label">Bạn là ai? <span class="req">*</span></div>
       <select id="who-chi" onchange="chonNguoi(this.value)"></select>
@@ -347,7 +409,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v3';
+  var APP_VERSION = 'v4';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -378,7 +440,7 @@
   function domSelect(id) { return document.getElementById(id); }
 
   function renderWho() {
-    [['who-nghi'], ['who-chi']].forEach(function (arr) {
+    [['who-nghi'], ['who-chi'], ['who-gopy']].forEach(function (arr) {
       var sel = domSelect(arr[0]);
       sel.innerHTML = '';
       sel.appendChild(new Option(NHAN_SU.length ? '-- Chọn tên --' : 'Đang tải danh sách…', ''));
@@ -439,10 +501,10 @@
   function chonTab(tab) {
     document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
     document.getElementById('panel-' + tab).classList.add('active');
-    document.getElementById('pageTitle').textContent = tab === 'chamcong' ? 'Chấm công' : (tab === 'nghi' ? 'Nghỉ phép' : 'Chi tiêu');
+    document.getElementById('pageTitle').textContent = { chamcong: 'Chấm công', nghi: 'Nghỉ phép', chi: 'Chi tiêu', gopy: 'Góp ý / báo lỗi' }[tab];
     document.getElementById('backBtn').classList.add('show');
     document.getElementById('mainHeader').classList.add('in-feature');
-    if (tab === 'chamcong') { ccMoCamera(); ccTaiDanhSach(); }
+    if (tab === 'chamcong') { ccMoCamera(); ccTaiDanhSach(); kiemTraMang(); }
     else { ccDungCamera(); }
   }
   function veTrangChu() {
@@ -593,6 +655,7 @@
   var ccStream = null;
   var ccAnhVuaChup = null;
   var ccLoaiDangChup = null;
+  var ccTgBam = null;       // giờ máy lúc bấm CHECK IN/OUT — server dùng nếu request tới trong 3 phút
 
   function ccCapNhatDongHo() {
     var now = new Date();
@@ -664,7 +727,7 @@
     ccCapNhatNutAction();
   }
   function ccCapNhatNutAction() {
-    var sanSang = !!ccTenDangChon;
+    var sanSang = !!ccTenDangChon && mangChoPhepCham();
     document.getElementById('cc-btn-checkin').classList.toggle('ready', sanSang);
     document.getElementById('cc-btn-checkout').classList.toggle('ready', sanSang);
   }
@@ -676,7 +739,11 @@
       document.getElementById('cc-cam-error').style.display = 'flex';
       return;
     }
+    if (!mangChoPhepCham()) return;
     ccLoaiDangChup = loai;
+    ccTgBam = Date.now();
+    ccIpLucBam = ccMang.ip;   // thông tin mạng của máy tại thời điểm bấm
+    kiemTraMang();
     var size = 260;
     var canvas = document.createElement('canvas');
     canvas.width = size; canvas.height = size;
@@ -707,36 +774,367 @@
     });
   }
 
-  async function ccXacNhanGui() {
-    ccChuyenManHinh('cc-screen-result');
-    document.getElementById('cc-result-icon').textContent = '⏳';
-    document.getElementById('cc-result-name').textContent = ccTenDangChon;
-    document.getElementById('cc-result-status').textContent = 'Đang gửi…';
-    document.getElementById('cc-result-status').className = '';
+  // ============================================================
+  // GỬI CHẤM CÔNG: lưu vào máy trước, gửi ngay, mất mạng thì tự gửi lại (hàng đợi)
+  // Mỗi lượt có mã riêng (maLuot) → server chống trùng nếu gửi lại.
+  // Sau khi ghi xong, gọi bot gửi biên nhận Telegram (kèm thông tin buffer của tháng).
+  // ============================================================
+  var HANG_DOI_KEY = 'fbo_hangDoiChamCong_v1';
+  var hangDoiBoNho = [];      // dự phòng khi trình duyệt chặn localStorage
+  var maDangHienThi = null;   // lượt đang hiện trên màn kết quả (hàng đợi nền bỏ qua lượt này)
+  var dangXuLyNen = false;
+  var demNguocTimer = null;
 
-    try {
-      var ip = await layIPCongKhai();
-      var res = await fetch(CC_WEBAPP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ ten: ccTenDangChon, loai: ccLoaiDangChup, anh: ccAnhVuaChup, ip: ip })
-      });
-      var data = await res.json();
-      if (data.ok) {
-        var canhBao = data.trangThai !== 'Đúng giờ';
-        document.getElementById('cc-result-icon').textContent = canhBao ? '⚠️' : '✅';
-        document.getElementById('cc-result-status').textContent = data.trangThai;
-        document.getElementById('cc-result-status').className = canhBao ? 'warn' : 'ok';
-      } else {
-        document.getElementById('cc-result-icon').textContent = '❌';
-        document.getElementById('cc-result-status').textContent = data.error || 'Lỗi không xác định';
-      }
-    } catch (err) {
-      document.getElementById('cc-result-icon').textContent = '❌';
-      document.getElementById('cc-result-status').textContent = 'Không gửi được, kiểm tra mạng.';
-    }
-
-    setTimeout(function () { ccHuyVeMain(); ccTaiDanhSach(); }, 2800);
+  function docHangDoi() {
+    try { var raw = localStorage.getItem(HANG_DOI_KEY); if (raw !== null) return JSON.parse(raw) || []; } catch (e) {}
+    return hangDoiBoNho;
   }
+  function luuHangDoi(ds) {
+    hangDoiBoNho = ds;
+    try { localStorage.setItem(HANG_DOI_KEY, JSON.stringify(ds)); } catch (e) {}
+    capNhatThanhCho();
+  }
+  function capNhatMuc(item) { luuHangDoi(docHangDoi().map(function (x) { return x.ma === item.ma ? item : x; })); }
+  function xoaMuc(ma) { luuHangDoi(docHangDoi().filter(function (x) { return x.ma !== ma; })); }
+  function taoMa() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+  function hhmm(ms) { var d = new Date(ms); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+
+  function capNhatThanhCho() {
+    var cho = docHangDoi().filter(function (x) { return x.buoc === 'cham'; });
+    var txt = cho.length
+      ? '📥 ' + cho.length + ' lượt chấm công đang lưu trên máy (' + cho.map(function (x) { return x.ten + ' ' + hhmm(x.tgMay); }).join(', ') +
+        ') — app tự gửi khi có mạng. <a onclick="xuLyHangDoi(true)">Gửi ngay</a>'
+      : '';
+    ['cc-pending-cc', 'cc-pending-home'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = txt;
+      el.classList.toggle('show', !!txt);
+    });
+  }
+
+  function fetchCoHan(url, opts, ms) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    if (ctrl) opts.signal = ctrl.signal;
+    var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+    return fetch(url, opts).then(function (r) { clearTimeout(t); return r.json(); },
+      function (e) { clearTimeout(t); throw e; });
+  }
+
+  // → {loai:'ok', data} | {loai:'loi', error} | {loai:'mang'}
+  async function guiCham(item) {
+    try {
+      var data = await fetchCoHan(CC_WEBAPP_URL, { method: 'POST', body: JSON.stringify({
+        ten: item.ten, loai: item.loai, anh: item.anh, ip: item.ip, tgMay: item.tgMay, maLuot: item.ma }) }, 20000);
+      if (data.ok) {
+        item.ketQua = data; item.buoc = 'bienNhan'; item.soLanThu = 0;   // giữ ảnh tới khi bot lưu bản gốc lên Drive
+        capNhatMuc(item);
+        return { loai: 'ok', data: data };
+      }
+      if (data.tamThoi) throw new Error(data.error || 'tạm thời');
+      xoaMuc(item.ma);
+      return { loai: 'loi', error: data.error || 'Lỗi không xác định' };
+    } catch (err) {
+      item.soLanThu = (item.soLanThu || 0) + 1;
+      if (item.soLanThu >= 20) { xoaMuc(item.ma); return { loai: 'loi', error: 'Gửi không được sau nhiều lần thử. Vui lòng báo quản lý.' }; }
+      capNhatMuc(item);
+      return { loai: 'mang' };
+    }
+  }
+
+  // Biên nhận Telegram + thông tin buffer. → {ok, daGui, coTelegram, tomTat} | null (mạng lỗi, sẽ thử lại)
+  async function guiBienNhan(item) {
+    try {
+      var data = await fetchCoHan(CONFIG.WEBAPP_URL, { method: 'POST', body: JSON.stringify({
+        loaiYeuCau: 'bienNhan', ten: item.ten, ngay: item.ketQua.ngay, luot: item.ketQua.luot,
+        maLuot: item.ma, anh: item.anh || '' }) }, 30000);
+      xoaMuc(item.ma);
+      return data;
+    } catch (err) {
+      item.soLanThu = (item.soLanThu || 0) + 1;
+      if (item.soLanThu >= 5) xoaMuc(item.ma); else capNhatMuc(item);
+      return null;
+    }
+  }
+
+  function moTaKetQua(data) {
+    var s = data.trangThai || '';
+    if (data.theoGioServer) s += ' · ghi theo giờ hệ thống';
+    return s;
+  }
+
+  // ---------- Màn kết quả ----------
+  function hienKetQua(o) {
+    ccChuyenManHinh('cc-screen-result');
+    document.getElementById('cc-result-icon').textContent = o.icon;
+    document.getElementById('cc-result-name').textContent = o.ten || '';
+    document.getElementById('cc-result-luot').innerHTML = o.luot || '';
+    var st = document.getElementById('cc-result-status');
+    st.textContent = o.status || '';
+    st.className = o.cls || '';
+    var note = document.getElementById('cc-result-note');
+    note.textContent = o.note || '';
+    note.classList.toggle('show', !!o.note);
+    document.getElementById('cc-result-meta').textContent = o.meta || '';
+    document.getElementById('cc-btn-retry').style.display = o.retry ? '' : 'none';
+    document.getElementById('cc-btn-baoloi').style.display = o.baoLoi ? '' : 'none';
+    ccLoiGanNhat = o.baoLoi ? ((o.ten || '') + ' · ' + String(o.luot || '').replace(/<[^>]+>/g, ' ') + ' · ' + (o.status || '')) : ccLoiGanNhat;
+    datDemNguoc(o.tuDong ? 20 : 0);
+  }
+  function datDemNguoc(giay) {
+    clearInterval(demNguocTimer);
+    var btn = document.getElementById('cc-btn-ok');
+    btn.textContent = giay ? 'OK (' + giay + ')' : 'OK';
+    if (!giay) return;
+    demNguocTimer = setInterval(function () {
+      giay--;
+      if (giay <= 0) { ccDongKetQua(); return; }
+      btn.textContent = 'OK (' + giay + ')';
+    }, 1000);
+  }
+  function ccDongKetQua() {
+    clearInterval(demNguocTimer);
+    document.getElementById('cc-btn-ok').textContent = 'OK';
+    maDangHienThi = null;
+    ccHuyVeMain();
+    ccTaiDanhSach();
+    xuLyHangDoi();
+  }
+
+  async function ccXacNhanGui() {
+    var tgMay = ccTgBam || Date.now();
+    var ip = ccIpLucBam || ccMang.ip || null;
+    var item = { ma: taoMa(), ten: ccTenDangChon, loai: ccLoaiDangChup, anh: ccAnhVuaChup, ip: ip,
+      tgMay: tgMay, buoc: 'cham', soLanThu: 0 };
+    luuHangDoi(docHangDoi().concat([item]));
+    maDangHienThi = item.ma;
+    await chayMotLuot(item);
+  }
+
+  async function chayMotLuot(item) {
+    hienKetQua({ icon: '⏳', ten: item.ten, luot: item.loai + ' · bấm lúc ' + hhmm(item.tgMay), status: 'Đang gửi…', cls: 'info' });
+    var r = await guiCham(item);
+    if (maDangHienThi !== item.ma) return;
+    if (r.loai === 'loi') {
+      hienKetQua({ icon: '❌', ten: item.ten, luot: item.loai + ' · bấm lúc ' + hhmm(item.tgMay), status: r.error, cls: 'warn',
+        meta: 'Lượt này CHƯA được ghi.', baoLoi: true });
+      return;
+    }
+    if (r.loai === 'mang') {
+      hienKetQua({ icon: '📥', ten: item.ten, luot: item.loai + ' · bấm lúc ' + hhmm(item.tgMay),
+        status: 'Đã lưu trên máy, chưa gửi được', cls: 'info', retry: true,
+        note: 'Mạng đang chập chờn. App sẽ tự gửi lại khi có mạng và vẫn ghi đúng giờ bấm ' + hhmm(item.tgMay) + '. ' +
+          'Khi hệ thống ghi nhận, bot sẽ nhắn xác nhận qua Telegram.' });
+      return;
+    }
+    var d = r.data;
+    hienKetQua({ icon: d.canhBao ? '⚠️' : '✅', ten: item.ten,
+      luot: (d.tenLuot || item.loai) + ' — đã ghi nhận<b>' + (d.gio || hhmm(item.tgMay)) + '</b>',
+      status: moTaKetQua(d), cls: d.canhBao ? 'warn' : 'ok',
+      note: d.theoGioServer ? 'Giờ trên máy đang chạy nhanh nên hệ thống ghi theo giờ hệ thống ' + d.gio + '. Kiểm tra lại cài đặt giờ của máy.' : '',
+      meta: '📨 Đang gửi xác nhận qua Telegram…', tuDong: true });
+    var bn = await guiBienNhan(item);
+    if (maDangHienThi !== item.ma) return;
+    var note = document.getElementById('cc-result-note');
+    if (bn && bn.ok && bn.tomTat) {
+      note.textContent = (d.theoGioServer ? note.textContent + ' ' : '') + bn.tomTat;
+      note.classList.add('show');
+    }
+    document.getElementById('cc-result-meta').textContent = !bn ? 'Chưa gửi được tin xác nhận Telegram — lượt chấm công vẫn đã được ghi.'
+      : (bn.daGui ? '📨 Bot đã nhắn xác nhận qua Telegram.'
+        : (bn.coTelegram === false || bn.ok ? 'Bot chưa nhắn được cho bạn — mở bot trên Telegram và bấm /start.' : 'Lượt chấm công đã được ghi.'));
+  }
+
+  function ccThuGuiLai() {
+    var item = docHangDoi().filter(function (x) { return x.ma === maDangHienThi; })[0];
+    if (item && item.buoc === 'cham') chayMotLuot(item);
+    else ccDongKetQua();
+  }
+
+  // ---------- Kiểm tra mạng khi vào Chấm công ----------
+  // Lấy IP (ipify) rồi hỏi backend chấm công: có bắt buộc Wifi công ty không, IP này có hợp lệ không.
+  // Sai mạng → khoá nút CHECK IN/OUT và nói rõ cần chuyển Wifi. Mất mạng nhưng vừa kiểm tra đúng Wifi
+  // trong 10 phút → vẫn cho chấm (lưu trên máy, gửi nền). Kiểm tra lại mỗi 20 giây và khi mạng đổi.
+  var MANG_KEY = 'fbo_mangGanNhat_v1';
+  var ccMang = { trangThai: 'dang', ip: null, batBuoc: null, hopLeLuc: 0 };
+  var ccIpLucBam = null;
+  var dangKiemTraMang = false;
+  try { var mc = JSON.parse(localStorage.getItem(MANG_KEY) || 'null'); if (mc) { ccMang.ip = mc.ip; ccMang.batBuoc = mc.batBuoc; ccMang.hopLeLuc = mc.hopLeLuc || 0; } } catch (e) {}
+
+  function mangChoPhepCham() {
+    if (ccMang.trangThai === 'ok' || ccMang.trangThai === 'dang') return true;
+    if (ccMang.trangThai === 'sai') return false;
+    // mất mạng: cho chấm nếu không bắt buộc Wifi, hoặc vừa xác nhận đúng Wifi trong 10 phút
+    return ccMang.batBuoc === false || (Date.now() - ccMang.hopLeLuc < 10 * 60 * 1000);
+  }
+  function hienMang() {
+    var el = document.getElementById('cc-net');
+    if (!el) return;
+    var t = ccMang.trangThai, html, cls = t;
+    if (t === 'dang') { html = '⏳ Đang kiểm tra mạng…'; cls = ''; }
+    else if (t === 'ok') html = ccMang.batBuoc ? '✅ Đang dùng Wifi công ty' : '✅ Đã kết nối mạng';
+    else if (t === 'sai') html = '⚠️ Không phải Wifi công ty — chuyển sang Wifi công ty rồi <a onclick="kiemTraMang(true)">kiểm tra lại</a>';
+    else html = mangChoPhepCham()
+      ? '📵 Mất mạng — vẫn chấm được, app lưu lại và tự gửi khi có mạng'
+      : '📵 Không có mạng — kết nối Wifi công ty rồi <a onclick="kiemTraMang(true)">kiểm tra lại</a>';
+    el.className = 'net-chip ' + cls;
+    el.innerHTML = html;
+    ccCapNhatNutAction();
+  }
+  async function kiemTraMang(hienDang) {
+    if (dangKiemTraMang) return;
+    dangKiemTraMang = true;
+    if (hienDang) { ccMang.trangThai = 'dang'; hienMang(); }
+    try {
+      if (navigator.onLine === false) throw new Error('offline');
+      var ip = (await fetchCoHan('https://api.ipify.org?format=json', {}, 6000)).ip;
+      var kq = await fetchCoHan(CC_WEBAPP_URL + '?api=mang&ip=' + encodeURIComponent(ip || ''), {}, 12000);
+      ccMang.ip = ip;
+      ccMang.batBuoc = !!kq.batBuocWifi;
+      ccMang.trangThai = kq.hopLe === false ? 'sai' : 'ok';
+      if (ccMang.trangThai === 'ok') ccMang.hopLeLuc = Date.now();
+      try { localStorage.setItem(MANG_KEY, JSON.stringify({ ip: ccMang.ip, batBuoc: ccMang.batBuoc, hopLeLuc: ccMang.hopLeLuc })); } catch (e) {}
+    } catch (err) {
+      ccMang.trangThai = 'mat';
+    } finally {
+      dangKiemTraMang = false;
+      hienMang();
+    }
+  }
+  function dangOManChamCong() { return document.getElementById('panel-chamcong').classList.contains('active'); }
+  setInterval(function () { if (dangOManChamCong() && !document.hidden) kiemTraMang(); }, 20000);
+  window.addEventListener('online', function () { if (dangOManChamCong()) kiemTraMang(true); });
+  window.addEventListener('offline', function () { ccMang.trangThai = 'mat'; hienMang(); });
+  try { if (navigator.connection) navigator.connection.addEventListener('change', function () { if (dangOManChamCong()) kiemTraMang(true); }); } catch (e) {}
+
+  // ---------- Góp ý / báo lỗi ----------
+  var ccLoiGanNhat = '';
+  var loaiGopY = 'Báo lỗi';
+  var anhGopYList = [];
+  function moGopY(noiDungSan) {
+    chonTab('gopy');
+    renderWho();
+    chonLoaiGopY(noiDungSan ? 'Báo lỗi' : loaiGopY);
+    if (noiDungSan) document.getElementById('noiDungGopY').value = noiDungSan + '\n';
+    document.getElementById('errGopY').classList.remove('show');
+  }
+  function ccBaoLoi() {
+    var ctx = ccLoiGanNhat;
+    if (!nguoiDaChon && ccTenDangChon) nguoiDaChon = ccTenDangChon;
+    clearInterval(demNguocTimer);
+    maDangHienThi = null;
+    ccHuyVeMain();
+    moGopY('[Lỗi chấm công] ' + ctx + '\nMô tả thêm: ');
+  }
+  function chonLoaiGopY(l) {
+    loaiGopY = l;
+    document.getElementById('segLoi').classList.toggle('active', l === 'Báo lỗi');
+    document.getElementById('segGopY').classList.toggle('active', l === 'Góp ý');
+  }
+  // Thu nhỏ ảnh (cạnh dài tối đa 1280px, JPEG) để gửi nhanh
+  function thuNhoAnh(file) {
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        var img = new Image();
+        img.onload = function () {
+          var k = Math.min(1, 1280 / Math.max(img.width, img.height));
+          var c = document.createElement('canvas');
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = function () { resolve(ev.target.result); };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  async function chonAnhGopY(e) {
+    var files = Array.prototype.slice.call(e.target.files || []);
+    e.target.value = '';
+    for (var i = 0; i < files.length && anhGopYList.length < 3; i++) anhGopYList.push(await thuNhoAnh(files[i]));
+    renderAnhGopY();
+  }
+  function renderAnhGopY() {
+    var row = document.getElementById('anhGopYRow');
+    row.innerHTML = '';
+    anhGopYList.forEach(function (src, idx) {
+      var div = document.createElement('div');
+      div.className = 'anh-thumb';
+      div.innerHTML = '<img src="' + src + '"><div class="x" onclick="anhGopYList.splice(' + idx + ',1);renderAnhGopY()">✕</div>';
+      row.appendChild(div);
+    });
+  }
+  async function guiGopY(btn) {
+    var err = document.getElementById('errGopY');
+    err.classList.remove('show');
+    var noiDung = document.getElementById('noiDungGopY').value.trim();
+    if (noiDung.length < 5) { err.textContent = 'Vui lòng viết nội dung góp ý / mô tả lỗi.'; err.classList.add('show'); return; }
+    var nguCanh = 'Phiên bản ' + APP_VERSION + ' · ' + navigator.userAgent.slice(0, 160) +
+      ' · Mạng: ' + ccMang.trangThai + (ccMang.ip ? ' (' + ccMang.ip + ')' : '') +
+      ' · Lượt chờ gửi: ' + docHangDoi().filter(function (x) { return x.buoc === 'cham'; }).length;
+    var oldText = btn.textContent;
+    btn.textContent = 'Đang gửi...'; btn.disabled = true;
+    try {
+      var out = await fetchCoHan(CONFIG.WEBAPP_URL, { method: 'POST', body: JSON.stringify({
+        loaiYeuCau: 'gopy', nguoiGui: nguoiDaChon || '', loai: loaiGopY, noiDung: noiDung, nguCanh: nguCanh, anh: anhGopYList }) }, 45000);
+      if (!out.ok) throw new Error(out.error || 'Lỗi');
+      document.getElementById('noiDungGopY').value = '';
+      anhGopYList = []; renderAnhGopY();
+      hienToast('✅ Đã gửi góp ý — cảm ơn bạn! Quản lý sẽ xem và phản hồi.', 3500);
+      setTimeout(veTrangChu, 1200);
+    } catch (e2) {
+      err.textContent = 'Chưa gửi được (' + (e2.message === 'Lỗi' ? 'lỗi hệ thống' : 'kiểm tra mạng') + '). Thử lại sau ít phút.';
+      err.classList.add('show');
+    } finally {
+      btn.textContent = oldText; btn.disabled = false;
+    }
+  }
+
+  // ---------- Hàng đợi nền ----------
+  async function xuLyHangDoi(thuNgay) {
+    if (dangXuLyNen) return;
+    if (!thuNgay && navigator.onLine === false) return;
+    dangXuLyNen = true;
+    try {
+      var ds = docHangDoi();
+      for (var i = 0; i < ds.length; i++) {
+        var item = ds[i];
+        if (item.ma === maDangHienThi) continue;
+        if (item.buoc === 'cham') {
+          var r = await guiCham(item);
+          if (r.loai === 'ok') {
+            hienToast('✅ Đã gửi lượt chấm công ' + hhmm(item.tgMay) + ' của <b>' + item.ten + '</b>: ' +
+              (r.data.tenLuot || '') + ' ' + r.data.gio + ' — ' + moTaKetQua(r.data), 7000);
+            await guiBienNhan(item);
+          } else if (r.loai === 'loi') {
+            hienToast('❌ Lượt chấm công ' + hhmm(item.tgMay) + ' của <b>' + item.ten + '</b> không ghi được: ' + r.error, 12000);
+          } else break;   // vẫn mất mạng → đợi lần sau
+        } else if (item.buoc === 'bienNhan') {
+          await guiBienNhan(item);
+        }
+      }
+    } finally {
+      dangXuLyNen = false;
+      capNhatThanhCho();
+    }
+  }
+  function hienToast(html, ms) {
+    var toast = document.getElementById('toast');
+    toast.innerHTML = html;
+    toast.classList.add('show');
+    clearTimeout(hienToast._t);
+    hienToast._t = setTimeout(function () { toast.classList.remove('show'); }, ms || 4000);
+  }
+  window.addEventListener('online', function () { xuLyHangDoi(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) xuLyHangDoi(); });
+  setInterval(xuLyHangDoi, 30000);
+  capNhatThanhCho();
+  setTimeout(xuLyHangDoi, 1500);
 </script>
 </body>
 </html>
