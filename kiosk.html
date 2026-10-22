@@ -409,7 +409,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v4';
+  var APP_VERSION = 'v4.1';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -838,8 +838,8 @@
       xoaMuc(item.ma);
       return { loai: 'loi', error: data.error || 'Lỗi không xác định' };
     } catch (err) {
+      // Lỗi mạng: giữ lượt trên máy tới khi server trả lời (server tự từ chối lượt quá hạn chốt tháng)
       item.soLanThu = (item.soLanThu || 0) + 1;
-      if (item.soLanThu >= 20) { xoaMuc(item.ma); return { loai: 'loi', error: 'Gửi không được sau nhiều lần thử. Vui lòng báo quản lý.' }; }
       capNhatMuc(item);
       return { loai: 'mang' };
     }
