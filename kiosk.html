@@ -409,7 +409,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v4.1';
+  var APP_VERSION = 'v4.2';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -796,6 +796,18 @@
   }
   function capNhatMuc(item) { luuHangDoi(docHangDoi().map(function (x) { return x.ma === item.ma ? item : x; })); }
   function xoaMuc(ma) { luuHangDoi(docHangDoi().filter(function (x) { return x.ma !== ma; })); }
+  // Nhật ký trên máy: 30 lần bấm gần nhất và kết quả, gửi kèm khi Báo lỗi / Góp ý
+  var NHAT_KY_KEY = 'fbo_nhatKyChamCong_v1';
+  function ghiNhatKyMay(item, kq) {
+    try {
+      var ds = JSON.parse(localStorage.getItem(NHAT_KY_KEY) || '[]');
+      ds.push(hhmm(Date.now()) + ' ' + new Date().getDate() + '/' + (new Date().getMonth() + 1) + ' · ' + item.ten + ' ' +
+        item.loai + ' bấm ' + hhmm(item.tgMay) + ' → ' + kq);
+      localStorage.setItem(NHAT_KY_KEY, JSON.stringify(ds.slice(-30)));
+    } catch (e) {}
+  }
+  function docNhatKyMay() { try { return JSON.parse(localStorage.getItem(NHAT_KY_KEY) || '[]'); } catch (e) { return []; } }
+
   function taoMa() {
     try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -828,18 +840,22 @@
   async function guiCham(item) {
     try {
       var data = await fetchCoHan(CC_WEBAPP_URL, { method: 'POST', body: JSON.stringify({
-        ten: item.ten, loai: item.loai, anh: item.anh, ip: item.ip, tgMay: item.tgMay, maLuot: item.ma }) }, 20000);
+        ten: item.ten, loai: item.loai, anh: item.anh, ip: item.ip, tgMay: item.tgMay, maLuot: item.ma,
+        phienBan: APP_VERSION }) }, 20000);
       if (data.ok) {
+        ghiNhatKyMay(item, 'đã ghi ' + (data.luot || ''));
         item.ketQua = data; item.buoc = 'bienNhan'; item.soLanThu = 0;   // giữ ảnh tới khi bot lưu bản gốc lên Drive
         capNhatMuc(item);
         return { loai: 'ok', data: data };
       }
       if (data.tamThoi) throw new Error(data.error || 'tạm thời');
+      ghiNhatKyMay(item, 'bị từ chối: ' + (data.error || ''));
       xoaMuc(item.ma);
       return { loai: 'loi', error: data.error || 'Lỗi không xác định' };
     } catch (err) {
       // Lỗi mạng: giữ lượt trên máy tới khi server trả lời (server tự từ chối lượt quá hạn chốt tháng)
       item.soLanThu = (item.soLanThu || 0) + 1;
+      if (item.soLanThu === 1) ghiNhatKyMay(item, 'lỗi mạng, giữ trên máy (' + (err && err.message || '') + ')');
       capNhatMuc(item);
       return { loai: 'mang' };
     }
@@ -910,6 +926,7 @@
     var item = { ma: taoMa(), ten: ccTenDangChon, loai: ccLoaiDangChup, anh: ccAnhVuaChup, ip: ip,
       tgMay: tgMay, buoc: 'cham', soLanThu: 0 };
     luuHangDoi(docHangDoi().concat([item]));
+    ghiNhatKyMay(item, 'đã lưu trên máy');
     maDangHienThi = item.ma;
     await chayMotLuot(item);
   }
@@ -1076,7 +1093,8 @@
     if (noiDung.length < 5) { err.textContent = 'Vui lòng viết nội dung góp ý / mô tả lỗi.'; err.classList.add('show'); return; }
     var nguCanh = 'Phiên bản ' + APP_VERSION + ' · ' + navigator.userAgent.slice(0, 160) +
       ' · Mạng: ' + ccMang.trangThai + (ccMang.ip ? ' (' + ccMang.ip + ')' : '') +
-      ' · Lượt chờ gửi: ' + docHangDoi().filter(function (x) { return x.buoc === 'cham'; }).length;
+      ' · Lượt chờ gửi: ' + docHangDoi().filter(function (x) { return x.buoc === 'cham'; }).length +
+      '\nNhật ký chấm công trên máy:\n' + docNhatKyMay().slice(-12).join('\n');
     var oldText = btn.textContent;
     btn.textContent = 'Đang gửi...'; btn.disabled = true;
     try {
