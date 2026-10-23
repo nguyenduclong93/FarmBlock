@@ -409,7 +409,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v4.2';
+  var APP_VERSION = 'v4.3';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -1148,8 +1148,42 @@
     clearTimeout(hienToast._t);
     hienToast._t = setTimeout(function () { toast.classList.remove('show'); }, ms || 4000);
   }
+  // ============================================================
+  // TỰ CẬP NHẬT: app mở sẵn trên máy (để nền nhiều ngày) không tự tải lại → hỏi bản trên server,
+  // khác APP_VERSION thì tải lại. Chỉ tải lại khi đang rảnh (trang chủ, hoặc màn chấm công chưa chọn gì,
+  // không đang gửi) để không mất thao tác dở. Lượt chờ gửi nằm trong localStorage nên không mất.
+  // ============================================================
+  var banMoi = null;
+  var CAP_NHAT_KEY = 'fbo_thuCapNhat_v1';
+  async function kiemTraBanMoi() {
+    try {
+      var r = await fetch(location.pathname + '?kt=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      var m = (await r.text()).match(/var APP_VERSION = '([^']+)'/);
+      if (m && m[1] !== APP_VERSION) { banMoi = m[1]; thuCapNhat(); }
+    } catch (e) {}
+  }
+  function dangRanh() {
+    if (dangXuLyNen || maDangHienThi) return false;
+    if (document.getElementById('panel-home').classList.contains('active')) return true;
+    return document.getElementById('panel-chamcong').classList.contains('active') &&
+      !document.getElementById('cc-screen-main').classList.contains('hidden') && !ccTenDangChon && !ccAnhVuaChup;
+  }
+  function thuCapNhat() {
+    if (!banMoi) return;
+    var daThu = null;
+    try { daThu = JSON.parse(localStorage.getItem(CAP_NHAT_KEY) || 'null'); } catch (e) {}
+    if (daThu && daThu.ban === banMoi && Date.now() - daThu.t < 5 * 60 * 1000) return;   // vừa thử, tránh tải lại liên tục
+    if (!dangRanh()) { hienToast('🔄 Có bản mới ' + banMoi + ' — app sẽ tự cập nhật khi bạn xong thao tác.', 4000); return; }
+    try { localStorage.setItem(CAP_NHAT_KEY, JSON.stringify({ ban: banMoi, t: Date.now() })); } catch (e) {}
+    location.replace(location.pathname + '?v=' + encodeURIComponent(banMoi));
+  }
+  setTimeout(kiemTraBanMoi, 3000);
+  setInterval(kiemTraBanMoi, 10 * 60 * 1000);
+  setInterval(thuCapNhat, 30000);
+
   window.addEventListener('online', function () { xuLyHangDoi(); });
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) xuLyHangDoi(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { xuLyHangDoi(); kiemTraBanMoi(); } });
   setInterval(xuLyHangDoi, 30000);
   capNhatThanhCho();
   setTimeout(xuLyHangDoi, 1500);
