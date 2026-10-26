@@ -409,7 +409,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v4.3';
+  var APP_VERSION = 'v4.4';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -757,7 +757,13 @@
 
     document.getElementById('cc-confirm-photo').src = dataUrl;
     document.getElementById('cc-confirm-info').textContent = ccTenDangChon;
-    document.getElementById('cc-confirm-sub').textContent = loai;
+    // Bấm nhầm nút (vd CHECK IN lúc về — Kiên 23/10/2026): nhắc rõ trên màn xác nhận
+    var gio = new Date(ccTgBam).getHours(), sub = document.getElementById('cc-confirm-sub');
+    var nghiNham = (loai === 'Check In' && gio >= 16) || (loai === 'Check Out' && gio < 11);
+    sub.innerHTML = nghiNham
+      ? '<b style="color:#E5484D">⚠️ ' + loai.toUpperCase() + ' lúc ' + hhmm(ccTgBam) + '?</b><br>' +
+        (loai === 'Check In' ? 'Nếu đang về, bấm Huỷ và chọn CHECK OUT.' : 'Nếu đang đến, bấm Huỷ và chọn CHECK IN.')
+      : loai;
     ccChuyenManHinh('cc-screen-confirm');
   }
   function ccChupLai() { ccChuyenManHinh('cc-screen-main'); }
@@ -841,7 +847,7 @@
     try {
       var data = await fetchCoHan(CC_WEBAPP_URL, { method: 'POST', body: JSON.stringify({
         ten: item.ten, loai: item.loai, anh: item.anh, ip: item.ip, tgMay: item.tgMay, maLuot: item.ma,
-        phienBan: APP_VERSION }) }, 20000);
+        phienBan: APP_VERSION }) }, 60000);
       if (data.ok) {
         ghiNhatKyMay(item, 'đã ghi ' + (data.luot || ''));
         item.ketQua = data; item.buoc = 'bienNhan'; item.soLanThu = 0;   // giữ ảnh tới khi bot lưu bản gốc lên Drive
