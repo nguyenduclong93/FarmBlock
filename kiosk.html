@@ -409,7 +409,7 @@
 <div id="versionTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--text-dim);opacity:.55;z-index:999;pointer-events:none;"></div>
 
 <script>
-  var APP_VERSION = 'v4.4';
+  var APP_VERSION = 'v4.5';
   document.getElementById('versionTag').textContent = APP_VERSION;
 </script>
 <script>
@@ -732,14 +732,33 @@
     document.getElementById('cc-btn-checkout').classList.toggle('ready', sanSang);
   }
 
+  // Dấu vết lần bấm KHÔNG thành lượt chấm công (bị chặn trên máy, huỷ ở màn xác nhận…) → ghi CC_NhatKy
+  // để tra các ca "đã chấm mà không nhận" (Kiên 27/10/2026: không có lượt ra, server không nhận được gì).
+  function guiDauVet(loai, suKien) {
+    var item = { ten: ccTenDangChon || '', loai: loai || '', tgMay: Date.now() };
+    ghiNhatKyMay(item, suKien);
+    try {
+      fetch(CC_WEBAPP_URL, { method: 'POST', keepalive: true, body: JSON.stringify({ loaiYeuCau: 'dauVet',
+        ten: item.ten, loai: item.loai, tgMay: item.tgMay, ip: ccMang.ip || '', phienBan: APP_VERSION,
+        suKien: suKien + ' · mạng: ' + ccMang.trangThai }) }).catch(function () {});
+    } catch (e) {}
+  }
+
   function ccThucHienCheck(loai) {
-    if (!ccTenDangChon) return;
+    if (!ccTenDangChon) { hienToast('Chọn tên của bạn trước.', 3000); return; }
     var video = document.getElementById('cc-video');
     if (!video.videoWidth) {
       document.getElementById('cc-cam-error').style.display = 'flex';
+      guiDauVet(loai, 'bấm nhưng chưa có camera');
       return;
     }
-    if (!mangChoPhepCham()) return;
+    if (!mangChoPhepCham()) {
+      hienToast(ccMang.trangThai === 'sai'
+        ? '⚠️ Chưa chấm được: máy không dùng Wifi công ty. Chuyển sang Wifi công ty rồi bấm lại.'
+        : '⚠️ Chưa chấm được: không có mạng. Kết nối Wifi công ty rồi bấm lại.', 8000);
+      guiDauVet(loai, 'bấm nhưng bị chặn vì mạng');
+      return;
+    }
     ccLoaiDangChup = loai;
     ccTgBam = Date.now();
     ccIpLucBam = ccMang.ip;   // thông tin mạng của máy tại thời điểm bấm
@@ -768,6 +787,7 @@
   }
   function ccChupLai() { ccChuyenManHinh('cc-screen-main'); }
   function ccHuyVeMain() {
+    if (ccAnhVuaChup && ccLoaiDangChup && !maDangHienThi) guiDauVet(ccLoaiDangChup, 'đã chụp ảnh nhưng bấm Huỷ, chưa gửi');
     ccTenDangChon = null; ccLoaiDangChup = null; ccAnhVuaChup = null;
     ccRenderDanhSach(); ccCapNhatNutAction();
     ccChuyenManHinh('cc-screen-main');
@@ -933,6 +953,7 @@
       tgMay: tgMay, buoc: 'cham', soLanThu: 0 };
     luuHangDoi(docHangDoi().concat([item]));
     ghiNhatKyMay(item, 'đã lưu trên máy');
+    ccAnhVuaChup = null;   // ảnh đã nằm trong lượt; để ccHuyVeMain không ghi nhầm dấu vết "bấm Huỷ"
     maDangHienThi = item.ma;
     await chayMotLuot(item);
   }
